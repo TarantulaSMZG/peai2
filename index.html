@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pea I</title>
+    <link rel="icon" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3e%3ccircle cx='50' cy='50' r='50' fill='black'/%3e%3cg stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M 35 25 H 65 V 75 H 35 Z' fill='none'/%3e%3cpath d='M 42 35 H 58 M 42 45 H 58 M 42 55 H 50' fill='none'/%3e%3ccircle cx='58' cy='58' r='14' fill='none'/%3e%3cline x1='69' y1='69' x2='82' y2='82'/%3e%3c/g%3e%3c/svg%3e" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script type="importmap">
+{
+  "imports": {
+    "@angular/common": "https://esm.sh/@angular/common@18.1.0",
+    "@angular/core": "https://esm.sh/@angular/core@18.1.0",
+    "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@18.1.0",
+    "@angular/router": "https://esm.sh/@angular/router@18.1.0",
+    "dexie": "https://esm.sh/dexie@4.0.8",
+    "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.es.mjs",
+    "rxjs": "https://esm.sh/rxjs@7.8.1",
+    "rxjs/operators": "https://esm.sh/rxjs@7.8.1/operators",
+    "tslib": "https://esm.sh/tslib@2.6.3",
+    "xlsx": "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
+    "@material/web/": "https://cdn.jsdelivr.net/npm/@material/web@1.5.0/",
+    "lit": "https://cdn.jsdelivr.net/npm/lit@3.1.4/+esm",
+    "lit/": "https://cdn.jsdelivr.net/npm/lit@3.1.4/",
+    "@lit/": "https://cdn.jsdelivr.net/npm/@lit/",
+    "lit-html/": "https://cdn.jsdelivr.net/npm/lit-html@3.1.4/",
+    "app/": "./src/app/",
+    "app/app.component": "https://next.esm.sh/app@^0.1.0/app.component?external=rxjs",
+    "app/app.config": "https://next.esm.sh/app@^0.1.0/app.config?external=rxjs",
+    "app/core/landing/landing.component": "https://next.esm.sh/app@^0.1.0/core/landing/landing.component?external=rxjs",
+    "app/features/toolbox.component": "https://next.esm.sh/app@^0.1.0/features/toolbox.component?external=rxjs",
+    "app/features/ocr/ocr.component": "https://next.esm.sh/app@^0.1.0/features/ocr/ocr.component?external=rxjs",
+    "app/features/parser/parser.component": "https://next.esm.sh/app@^0.1.0/features/parser/parser.component?external=rxjs",
+    "app/features/analyze/analyze.component": "https://next.esm.sh/app@^0.1.0/features/analyze/analyze.component?external=rxjs",
+    "app/features/search/search.component": "https://next.esm.sh/app@^0.1.0/features/search/search.component?external=rxjs",
+    "app/features/insights/insights.component": "https://next.esm.sh/app@^0.1.0/features/insights/insights.component?external=rxjs",
+    "app/core/footer/footer.component": "https://next.esm.sh/app@^0.1.0/core/footer/footer.component?external=rxjs",
+    "app/core/theme-toggle-button/theme-toggle-button.component": "https://next.esm.sh/app@^0.1.0/core/theme-toggle-button/theme-toggle-button.component?external=rxjs",
+    "app/shared/floating-status/floating-status.component": "https://next.esm.sh/app@^0.1.0/shared/floating-status/floating-status.component?external=rxjs",
+    "app/services/theme.service": "https://next.esm.sh/app@^0.1.0/services/theme.service?external=rxjs",
+    "app/types": "https://next.esm.sh/app@^0.1.0/types?external=rxjs",
+    "app/services/notification.service": "https://next.esm.sh/app@^0.1.0/services/notification.service?external=rxjs",
+    "app/shared/logo-icon/logo-icon.component": "https://next.esm.sh/app@^0.1.0/shared/logo-icon/logo-icon.component?external=rxjs",
+    "app/utils/promise-pool": "https://next.esm.sh/app@^0.1.0/utils/promise-pool?external=rxjs",
+    "app/shared/module-wrapper/module-wrapper.component": "https://next.esm.sh/app@^0.1.0/shared/module-wrapper/module-wrapper.component?external=rxjs",
+    "app/shared/io-field/io-field.component": "https://next.esm.sh/app@^0.1.0/shared/io-field/io-field.component?external=rxjs",
+    "app/services/file.service": "https://next.esm.sh/app@^0.1.0/services/file.service?external=rxjs",
+    "app/utils/quotes": "https://next.esm.sh/app@^0.1.0/utils/quotes?external=rxjs",
+    "app/shared/data-table/data-table.component": "https://next.esm.sh/app@^0.1.0/shared/data-table/data-table.component?external=rxjs",
+    "app/shared/edit-modal/edit-modal.component": "https://next.esm.sh/app@^0.1.0/shared/edit-modal/edit-modal.component?external=rxjs",
+    "app/services/data.service": "https://next.esm.sh/app@^0.1.0/services/data.service?external=rxjs",
+    "app/services/gemini.service": "https://next.esm.sh/app@^0.1.0/services/gemini.service?external=rxjs",
+    "app/utils/filename": "https://next.esm.sh/app@^0.1.0/utils/filename?external=rxjs",
+    "app/utils/markdown": "https://next.esm.sh/app@^0.1.0/utils/markdown?external=rxjs"
+  }
+}
+</script>
+    
+    <script type="module">
+      import '@material/web/all.js';
+      import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+    <link rel="stylesheet" href="src/styles.css">
+</head>
+  <body>
+    <app-root></app-root>
+    <script type="module" src="src/main.ts"></script>
+  </body>
+</html>

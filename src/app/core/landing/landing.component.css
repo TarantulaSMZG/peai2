@@ -1,0 +1,23 @@
+.gemini-pill {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  border-radius: 100px;
+  border: none;
+  background-color: var(--md-sys-color-surface-container-low);
+  cursor: pointer;
+  width: fit-content;
+  transition: all 0.2s ease-in-out;
+  text-align: left;
+  font-family: var(--md-ref-typeface-plain);
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 12px;
+  text-decoration: none;
+}
+
+.gemini-pill:hover {
+  background-color: var(--md-sys-color-surface-container-highest);
+  transform: translateY(-1px);
+  box-shadow: var(--md-sys-elevation-level1);
+}

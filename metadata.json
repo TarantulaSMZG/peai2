@@ -1,0 +1,5 @@
+{
+  "name": "peai 2.0.1 alpha",
+  "description": "PEAI: Parsen, Extrahieren, Analysieren, Einblicke. Eine Angular-Anwendung zum Parsen, Analysieren und Gewinnen von Einblicken aus Protokollen.",
+  "requestFramePermissions": []
+}

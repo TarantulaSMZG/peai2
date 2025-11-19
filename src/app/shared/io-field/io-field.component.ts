@@ -1,42 +1,48 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-io-field',
   standalone: true,
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
   template: `
     <div>
-      <div class="flex justify-between items-center mb-2 min-h-[40px] flex-wrap gap-2">
+      <div class="flex justify-between items-center mb-1 min-h-[40px] flex-wrap gap-2">
         <div class="flex items-center gap-4 flex-wrap">
-          <label class="md-typescale-body-large" [for]="id()">{{ label() }}</label>
+          <label class="mat-body-1" [for]="id()">{{ label() }}</label>
           <ng-content select="[labelAdornment]" />
         </div>
         <div class="flex gap-1 items-center">
           <ng-content select="[customActions]" />
           @if (canCopy()) {
-            <md-icon-button (click)="handleCopy()" title="In Zwischenablage kopieren" [disabled]="disabled()">
-              <span class="material-symbols-outlined">{{ copyIcon() }}</span>
-            </md-icon-button>
+            <button mat-icon-button (click)="handleCopy()" title="In Zwischenablage kopieren" [disabled]="disabled()">
+              <mat-icon>{{ copyIcon() }}</mat-icon>
+            </button>
           }
           @if (canClear()) {
-            <md-icon-button (click)="clear.emit()" title="Text leeren" [disabled]="disabled()">
-              <span class="material-symbols-outlined">close</span>
-            </md-icon-button>
+            <button mat-icon-button (click)="clear.emit()" title="Text leeren" [disabled]="disabled()">
+              <mat-icon>close</mat-icon>
+            </button>
           }
         </div>
       </div>
-      <md-outlined-text-field
-        [id]="id()"
-        type="textarea"
-        [rows]="rows()"
-        class="w-full"
-        style="max-height: 40vh; resize: vertical;"
-        [value]="value()"
-        (input)="onValueChange($event)"
-        [disabled]="disabled()"
-        [readOnly]="isOutput()"
-        [label]="placeholder()"
-      />
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>{{ placeholder() }}</mat-label>
+        <textarea
+          matInput
+          [id]="id()"
+          [rows]="rows()"
+          class="w-full"
+          style="max-height: 40vh; resize: vertical;"
+          [value]="value()"
+          (input)="onValueChange($event)"
+          [disabled]="disabled()"
+          [readonly]="isOutput()">
+        </textarea>
+      </mat-form-field>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

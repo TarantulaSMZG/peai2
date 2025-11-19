@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { FooterComponent } from 'app/core/footer/footer.component';
 import { ThemeToggleButtonComponent } from 'app/core/theme-toggle-button/theme-toggle-button.component';
 import { FloatingStatusComponent } from 'app/shared/floating-status/floating-status.component';
 import { ThemeService } from 'app/services/theme.service';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -12,7 +13,9 @@ import { ThemeService } from 'app/services/theme.service';
       <router-outlet />
     </main>
     <app-floating-status />
-    <app-footer />
+    @if (showFooter()) {
+      <app-footer />
+    }
     <app-theme-toggle-button />
   `,
   styles: [':host { display: contents; }'],
@@ -23,14 +26,21 @@ import { ThemeService } from 'app/services/theme.service';
     FooterComponent,
     ThemeToggleButtonComponent,
     FloatingStatusComponent
-  ],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+  ]
 })
 export class AppComponent {
-  // FIX: Injected service as a class property with an explicit type to ensure proper type inference.
   private themeService: ThemeService = inject(ThemeService);
+  private router: Router = inject(Router);
+
+  showFooter = signal(false);
 
   constructor() {
     this.themeService.initializeTheme();
+    
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.showFooter.set(event.urlAfterRedirects.startsWith('/tools'));
+    });
   }
 }

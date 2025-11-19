@@ -1,4 +1,8 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
 import { ModuleWrapperComponent } from 'app/shared/module-wrapper/module-wrapper.component';
 import { IoFieldComponent } from 'app/shared/io-field/io-field.component';
 import { DataTableComponent } from 'app/shared/data-table/data-table.component';
@@ -16,8 +20,10 @@ const VISIBLE_COLUMNS: SortableKey[] = ['id', 'question', 'answer', 'kernaussage
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [ModuleWrapperComponent, IoFieldComponent, DataTableComponent, EditModalComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    ModuleWrapperComponent, IoFieldComponent, DataTableComponent,
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule
+  ],
   template: `
     <app-module-wrapper
       title="Search"
@@ -25,21 +31,21 @@ const VISIBLE_COLUMNS: SortableKey[] = ['id', 'question', 'answer', 'kernaussage
       
       @if (dataService.isLoading() && !localData()) {
         <div class="placeholder-card" style="min-height: 400px; justify-content: center;">
-          <md-circular-progress indeterminate></md-circular-progress>
-          <h3 class="md-typescale-title-medium">Lade Daten...</h3>
+          <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+          <h3 class="mat-h3">Lade Daten...</h3>
         </div>
       } @else if (dataToSearch().length === 0) {
           <div class="placeholder-card">
             <span class="material-symbols-outlined">dataset_linked</span>
-            <h3 class="md-typescale-title-medium">Keine Daten gefunden</h3>
-            <p class="md-typescale-body-medium">Laden Sie eine CSV-Datei hoch, um die Suche zu verwenden. Es sind keine Daten in der zentralen Datenbank vorhanden.</p>
+            <h3 class="mat-h3">Keine Daten gefunden</h3>
+            <p class="mat-body-1">Laden Sie eine CSV-Datei hoch, um die Suche zu verwenden. Es sind keine Daten in der zentralen Datenbank vorhanden.</p>
           </div>
           <div class="action-buttons">
               <input type="file" #fileInput (change)="onFileChange($event)" class="hidden" accept=".csv" />
-              <md-filled-button (click)="fileInput.click()" [disabled]="isLoading()">
-                   <span class="material-symbols-outlined" slot="icon">upload_file</span>
+              <button mat-flat-button color="primary" (click)="fileInput.click()" [disabled]="isLoading()">
+                   <mat-icon>upload_file</mat-icon>
                    CSV hochladen
-              </md-filled-button>
+              </button>
           </div>
       } @else {
         <app-io-field
@@ -52,74 +58,72 @@ const VISIBLE_COLUMNS: SortableKey[] = ['id', 'question', 'answer', 'kernaussage
 
         <div class="action-buttons">
            <input type="file" #fileInput (change)="onFileChange($event)" class="hidden" accept=".csv" />
-           <md-outlined-button (click)="fileInput.click()" [disabled]="isLoading()">
-              <span class="material-symbols-outlined" slot="icon">upload_file</span>
+           <button mat-stroked-button (click)="fileInput.click()" [disabled]="isLoading()">
+              <mat-icon>upload_file</mat-icon>
               CSV hochladen
-           </md-outlined-button>
-           <md-filled-button (click)="onSearch()" [disabled]="isLoading() || !searchQuery().trim()">
-              <span class="material-symbols-outlined" slot="icon">search</span>
+           </button>
+           <button mat-flat-button color="primary" (click)="onSearch()" [disabled]="isLoading() || !searchQuery().trim()">
+              <mat-icon>search</mat-icon>
               Suchen
-          </md-filled-button>
+          </button>
           @if (isSearching()) {
-              <md-outlined-button (click)="abort()">
-                   <span class="material-symbols-outlined" slot="icon">cancel</span>
+              <button mat-stroked-button (click)="abort()">
+                   <mat-icon>cancel</mat-icon>
                   Abbrechen
-              </md-outlined-button>
+              </button>
           }
         </div>
 
         @if (localData()) {
           <div class="text-center -mt-2">
-              <md-text-button (click)="clearLocalData()">Lokal geladene Daten löschen & Datenbank verwenden</md-text-button>
+              <button mat-button (click)="clearLocalData()">Lokal geladene Daten löschen & Datenbank verwenden</button>
           </div>
         }
 
         @if (searchResults().length > 0) {
            <div class="mt-6">
               <div class="flex justify-between items-center mb-4">
-                  <h2 class="md-typescale-title-large">Suchergebnisse ({{ searchResults().length }})</h2>
+                  <h2 class="mat-h2">Suchergebnisse ({{ searchResults().length }})</h2>
                   <div class="flex gap-2">
-                      <md-icon-button title="Ergebnisse als CSV exportieren" (click)="fileService.exportToCsv(searchResults(), generateFilename(protocolNumber(), 'search') + '.csv')" [disabled]="isLoading()">
-                          <span class="material-symbols-outlined">csv</span>
-                      </md-icon-button>
-                      <md-icon-button title="Ergebnisse als XLSX exportieren" (click)="fileService.exportToXlsx(searchResults(), generateFilename(protocolNumber(), 'search') + '.xlsx')" [disabled]="isLoading()">
-                          <span class="material-symbols-outlined">description</span>
-                      </md-icon-button>
-                      <md-icon-button (click)="searchResults.set([])" [disabled]="isLoading()" title="Ergebnisse löschen"><span class="material-symbols-outlined">delete_sweep</span></md-icon-button>
+                      <button mat-icon-button title="Ergebnisse als CSV exportieren" (click)="fileService.exportToCsv(searchResults(), generateFilename(protocolNumber(), 'search') + '.csv')" [disabled]="isLoading()">
+                          <mat-icon>csv</mat-icon>
+                      </button>
+                      <button mat-icon-button title="Ergebnisse als XLSX exportieren" (click)="fileService.exportToXlsx(searchResults(), generateFilename(protocolNumber(), 'search') + '.xlsx')" [disabled]="isLoading()">
+                          <mat-icon>description</mat-icon>
+                      </button>
+                      <button mat-icon-button (click)="searchResults.set([])" [disabled]="isLoading()" title="Ergebnisse löschen"><mat-icon>delete_sweep</mat-icon></button>
                   </div>
               </div>
-              <app-data-table [data]="sortedData()" (rowClick)="editingEntry.set($event)" (sort)="onSort($event)" [sortConfig]="sortConfig()" [visibleColumns]="visibleColumns" />
+              <app-data-table [data]="sortedData()" (rowClick)="openEditModal($event)" (sort)="onSort($event)" [sortConfig]="sortConfig()" [visibleColumns]="visibleColumns" />
            </div>
         } @else {
           @if(isSearching()) {
-            <div class="placeholder-card"><md-circular-progress indeterminate></md-circular-progress><h3 class="md-typescale-title-medium">Suche läuft...</h3></div>
+            <div class="placeholder-card"><mat-progress-spinner mode="indeterminate"></mat-progress-spinner><h3 class="mat-h3">Suche läuft...</h3></div>
           } @else {
             <div class="placeholder-card">
               <span class="material-symbols-outlined">search</span>
-              <h3 class="md-typescale-title-medium">Bereit zur Suche</h3>
-              <p class="md-typescale-body-medium">Geben Sie oben eine Suchanfrage ein, um die {{ dataToSearch().length }} Einträge in der {{ dataSourceType() }} zu analysieren.</p>
+              <h3 class="mat-h3">Bereit zur Suche</h3>
+              <p class="mat-body-1">Geben Sie oben eine Suchanfrage ein, um die {{ dataToSearch().length }} Einträge in der {{ dataSourceType() }} zu analysieren.</p>
             </div>
           }
         }
-        <app-edit-modal [entry]="editingEntry()" (close)="editingEntry.set(null)" (save)="onSaveChanges($event)" />
       }
     </app-module-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchComponent {
-  // FIX: Explicitly typed injected services to ensure correct type inference.
   dataService: DataService = inject(DataService);
   fileService: FileService = inject(FileService);
   geminiService: GeminiService = inject(GeminiService);
   notificationService: NotificationService = inject(NotificationService);
+  dialog: MatDialog = inject(MatDialog);
 
   localData = signal<ParsedEntry[] | null>(null);
   searchResults = signal<ParsedEntry[]>([]);
   searchQuery = signal('');
   isSearching = signal(false);
   
-  editingEntry = signal<ParsedEntry | null>(null);
   sortConfig = signal<{ key: SortableKey; direction: SortDirection } | null>({ key: 'id', direction: 'ascending' });
   
   abortController: AbortController | null = null;
@@ -212,6 +216,20 @@ export class SearchComponent {
     });
     return config.direction === 'ascending' ? sorted : sorted.reverse();
   });
+  
+  openEditModal(entry: ParsedEntry) {
+    const dialogRef = this.dialog.open(EditModalComponent, {
+      width: '800px',
+      maxWidth: '90vw',
+      data: entry
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.onSaveChanges(result);
+      }
+    });
+  }
 
   async onSaveChanges(updatedEntry: ParsedEntry) {
     if (this.localData()) {
@@ -220,7 +238,6 @@ export class SearchComponent {
         await this.dataService.updateEntry(updatedEntry);
     }
     this.searchResults.update(results => results.map(e => e.id === updatedEntry.id ? updatedEntry : e));
-    this.editingEntry.set(null);
     this.notificationService.showStatus(`Eintrag #${updatedEntry.id} aktualisiert.`);
   }
 }

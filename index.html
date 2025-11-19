@@ -18,21 +18,33 @@
   "imports": {
     "@angular/common": "https://esm.sh/@angular/common@18.1.0",
     "@angular/core": "https://esm.sh/@angular/core@18.1.0",
+    "@angular/core/rxjs-interop": "https://esm.sh/@angular/core@18.1.0/rxjs-interop",
     "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@18.1.0",
+    "@angular/platform-browser/animations": "https://esm.sh/@angular/platform-browser@18.1.0/animations",
     "@angular/router": "https://esm.sh/@angular/router@18.1.0",
+    "@angular/cdk": "https://esm.sh/@angular/cdk@18.1.0",
+    "@angular/cdk/platform": "https://esm.sh/@angular/cdk@18.1.0/platform",
+    "@angular/cdk/a11y": "https://esm.sh/@angular/cdk@18.1.0/a11y",
+    "@angular/material/core": "https://esm.sh/@angular/material@18.1.0/core",
+    "@angular/material/button": "https://esm.sh/@angular/material@18.1.0/button",
+    "@angular/material/icon": "https://esm.sh/@angular/material@18.1.0/icon",
+    "@angular/material/form-field": "https://esm.sh/@angular/material@18.1.0/form-field",
+    "@angular/material/input": "https://esm.sh/@angular/material@18.1.0/input",
+    "@angular/material/progress-spinner": "https://esm.sh/@angular/material@18.1.0/progress-spinner",
+    "@angular/material/progress-bar": "https://esm.sh/@angular/material@18.1.0/progress-bar",
+    "@angular/material/dialog": "https://esm.sh/@angular/material@18.1.0/dialog",
+    "@angular/material/table": "https://esm.sh/@angular/material@18.1.0/table",
+    "@angular/material/sort": "https://esm.sh/@angular/material@18.1.0/sort",
+    "@angular/material/select": "https://esm.sh/@angular/material@18.1.0/select",
     "dexie": "https://esm.sh/dexie@4.0.8",
     "dompurify": "https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.es.mjs",
+    "pdfjs-dist": "https://esm.sh/pdfjs-dist@4.4.168",
     "rxjs": "https://esm.sh/rxjs@7.8.1",
     "rxjs/operators": "https://esm.sh/rxjs@7.8.1/operators",
+    "tesseract.js": "https://esm.sh/tesseract.js@5.1.0",
     "tslib": "https://esm.sh/tslib@2.6.3",
     "xlsx": "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/xlsx.mjs",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
-    "@material/web/": "https://cdn.jsdelivr.net/npm/@material/web@1.5.0/",
-    "lit": "https://cdn.jsdelivr.net/npm/lit@3.1.4/+esm",
-    "lit/": "https://cdn.jsdelivr.net/npm/lit@3.1.4/",
-    "@lit/": "https://cdn.jsdelivr.net/npm/@lit/",
-    "lit-html/": "https://cdn.jsdelivr.net/npm/lit-html@3.1.4/",
-    "app/": "./src/app/",
     "app/app.component": "https://next.esm.sh/app@^0.1.0/app.component?external=rxjs",
     "app/app.config": "https://next.esm.sh/app@^0.1.0/app.config?external=rxjs",
     "app/core/landing/landing.component": "https://next.esm.sh/app@^0.1.0/core/landing/landing.component?external=rxjs",
@@ -64,14 +76,9 @@
 }
 </script>
     
-    <script type="module">
-      import '@material/web/all.js';
-      import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
-      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
-    </script>
     <link rel="stylesheet" href="src/styles.css">
 </head>
-  <body>
+  <body class="mat-typography">
     <app-root></app-root>
     <script type="module" src="src/main.ts"></script>
   </body>

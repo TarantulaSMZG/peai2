@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { ModuleWrapperComponent } from 'app/shared/module-wrapper/module-wrapper.component';
 import { DataTableComponent } from 'app/shared/data-table/data-table.component';
 import { DataService } from 'app/services/data.service';
@@ -11,8 +17,11 @@ const VISIBLE_COLUMNS: SortableKey[] = ['id', 'Fraktion', 'witness', 'kernaussag
 @Component({
   selector: 'app-analyze',
   standalone: true,
-  imports: [ModuleWrapperComponent, DataTableComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    ModuleWrapperComponent, DataTableComponent, MatFormFieldModule,
+    MatInputModule, MatSelectModule, MatProgressSpinnerModule,
+    MatButtonModule, MatIconModule
+  ],
   template: `
     <app-module-wrapper
       title="Analyse-Modul"
@@ -20,60 +29,58 @@ const VISIBLE_COLUMNS: SortableKey[] = ['id', 'Fraktion', 'witness', 'kernaussag
       
       @if (dataService.isLoading()) {
         <div class="placeholder-card" style="min-height: 400px; justify-content: center;">
-          <md-circular-progress indeterminate></md-circular-progress>
-          <h3 class="md-typescale-title-medium">Lade Daten aus der Datenbank...</h3>
+          <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+          <h3 class="mat-h3">Lade Daten aus der Datenbank...</h3>
         </div>
       } @else if (allData().length === 0) {
         <div class="placeholder-card">
           <span class="material-symbols-outlined">dataset_linked</span>
-          <h3 class="md-typescale-title-medium">Keine Daten gefunden</h3>
-          <p class="md-typescale-body-medium">Bitte laden Sie zuerst eine Datei im <strong>Parser</strong>-Modul hoch, um die Daten zu analysieren.</p>
+          <h3 class="mat-h3">Keine Daten gefunden</h3>
+          <p class="mat-body-1">Bitte laden Sie zuerst eine Datei im <strong>Parser</strong>-Modul hoch, um die Daten zu analysieren.</p>
         </div>
       } @else {
-        <div class="p-4 flex flex-col gap-4 bg-surface-container-low rounded-lg">
-          <h2 class="md-typescale-title-medium w-full m-0">Filter</h2>
+        <div class="p-4 flex flex-col gap-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <h2 class="mat-h2 w-full m-0">Filter</h2>
           
-          <md-outlined-text-field
-              label="Volltextsuche (Frage, Antwort, Kernaussage...)"
-              class="w-full"
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Volltextsuche (Frage, Antwort, Kernaussage...)</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput
               [value]="filterSearchText()"
-              (input)="filterSearchText.set($event.target.value)">
-              <span class="material-symbols-outlined" slot="leading-icon">search</span>
-          </md-outlined-text-field>
+              (input)="filterSearchText.set(($event.target as HTMLInputElement).value)">
+          </mat-form-field>
 
           <div class="flex gap-4 flex-wrap">
-            <md-outlined-select
-              label="Fraktion"
-              class="min-w-[250px]"
-              [value]="filterFraktion()"
-              (change)="filterFraktion.set($event.target.value)">
-              @for (f of uniqueFraktionen(); track f) {
-                <md-menu-item [value]="f">{{ f || 'Alle Fraktionen' }}</md-menu-item>
-              }
-            </md-outlined-select>
+            <mat-form-field appearance="outline" class="min-w-[250px]">
+              <mat-label>Fraktion</mat-label>
+              <mat-select [value]="filterFraktion()" (selectionChange)="filterFraktion.set($event.value)">
+                @for (f of uniqueFraktionen(); track f) {
+                  <mat-option [value]="f">{{ f || 'Alle Fraktionen' }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
 
-            <md-outlined-select
-              label="Kategorie"
-              class="min-w-[250px]"
-              [value]="filterKategorie()"
-              (change)="filterKategorie.set($event.target.value)">
-              @for (k of uniqueKategorien(); track k) {
-                <md-menu-item [value]="k">{{ k || 'Alle Kategorien' }}</md-menu-item>
-              }
-            </md-outlined-select>
+            <mat-form-field appearance="outline" class="min-w-[250px]">
+              <mat-label>Kategorie</mat-label>
+              <mat-select [value]="filterKategorie()" (selectionChange)="filterKategorie.set($event.value)">
+                 @for (k of uniqueKategorien(); track k) {
+                  <mat-option [value]="k">{{ k || 'Alle Kategorien' }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           </div>
         </div>
 
         <div class="mt-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="md-typescale-title-large">Gefilterte Daten ({{ filteredData().length }} / {{ allData().length }})</h2>
+            <h2 class="mat-h2">Gefilterte Daten ({{ filteredData().length }} / {{ allData().length }})</h2>
             <div class="flex gap-2">
-              <md-icon-button title="Export Filtered as CSV" (click)="fileService.exportToCsv(filteredData(), generateFilename('analyse', 'filtered') + '.csv')">
-                <span class="material-symbols-outlined">csv</span>
-              </md-icon-button>
-              <md-icon-button title="Export Filtered as XLSX" (click)="fileService.exportToXlsx(filteredData(), generateFilename('analyse', 'filtered') + '.xlsx')">
-                <span class="material-symbols-outlined">description</span>
-              </md-icon-button>
+              <button mat-icon-button title="Export Filtered as CSV" (click)="fileService.exportToCsv(filteredData(), generateFilename('analyse', 'filtered') + '.csv')">
+                <mat-icon>csv</mat-icon>
+              </button>
+              <button mat-icon-button title="Export Filtered as XLSX" (click)="fileService.exportToXlsx(filteredData(), generateFilename('analyse', 'filtered') + '.xlsx')">
+                <mat-icon>description</mat-icon>
+              </button>
             </div>
           </div>
           <app-data-table 
@@ -88,7 +95,6 @@ const VISIBLE_COLUMNS: SortableKey[] = ['id', 'Fraktion', 'witness', 'kernaussag
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnalyzeComponent {
-  // FIX: Explicitly typed injected services to ensure correct type inference.
   dataService: DataService = inject(DataService);
   fileService: FileService = inject(FileService);
 

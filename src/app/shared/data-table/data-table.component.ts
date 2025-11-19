@@ -1,79 +1,41 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, viewChild } from '@angular/core';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatIconModule } from '@angular/material/icon';
 import { ParsedEntry, SortableKey, SortDirection } from 'app/types';
 
 @Component({
   selector: 'app-data-table',
   standalone: true,
+  imports: [MatTableModule, MatSortModule, MatIconModule],
   template: `
-    <div class="overflow-auto max-h-[60vh] border border-outline-variant rounded-lg">
-      <table class="min-w-full border-collapse text-sm">
-        <thead class="sticky top-0 z-10 bg-surface">
-          <tr>
-            @for (key of headers(); track key) {
-              <th 
-                class="p-4 text-left font-medium text-on-surface-variant whitespace-nowrap border-b border-outline-variant"
-                [class.cursor-pointer]="isSortable(key)"
-                [class.sticky]="key === 'id'"
-                [class.left-0]="key === 'id'"
-                [class.bg-inherit]="key === 'id'"
-                [style.min-width]="colMinWidth[key]"
-                (click)="isSortable(key) && sort.emit(key)">
-                <div class="flex items-center gap-2" [class.active]="sortConfig()?.key === key">
-                  {{ headerMap[key] || key }}
-                  @if (sortConfig()?.key === key) {
-                    <span class="material-symbols-outlined text-base transition-transform" [class.rotate-180]="sortConfig()?.direction === 'descending'">arrow_upward</span>
-                  }
-                </div>
-              </th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (entry of data(); track entry.id; let qaIdx = $index) {
-            @if (entry.note) {
-              <tr class="data-table-row even-row" (click)="rowClick.emit(entry)">
-                @for (key of headers(); track key; let colIdx = $index) {
-                  @if (colIdx < noteStartIndex()) {
-                    <td class="p-4 align-top border-t border-outline-variant"
-                        [class.sticky]="key === 'id'"
-                        [class.left-0]="key === 'id'"
-                        [class.bg-inherit]="key === 'id'">
-                      {{ key === 'id' ? entry.id : '' }}
-                    </td>
-                  } @else if (colIdx === noteStartIndex()) {
-                    <td class="p-4 align-top border-t border-outline-variant italic text-on-surface-variant" [attr.colspan]="noteColSpan()">
-                      Anmerkung: {{ entry.note }} (Fundstelle: {{ entry.sourceReference || 'N/A' }})
-                    </td>
-                  }
-                }
-              </tr>
-            } @else {
-              <tr class="data-table-row" 
-                  [class.bg-surface-container-low]="(qaPairCounter(qaIdx)) % 2 === 0"
-                  (click)="rowClick.emit(entry)">
-                @for (key of headers(); track key) {
-                  <td class="p-4 align-top border-t border-outline-variant"
-                      [style.min-width]="colMinWidth[key]"
-                      [class.sticky]="key === 'id'"
-                      [class.left-0]="key === 'id'"
-                      [class.bg-inherit]="key === 'id'"
-                      [class.font-medium]="key === 'id' || key === 'questioner' || key === 'witness' || key === 'Fraktion'">
-                      {{ getCellValue(key, entry, qaPairCounter(qaIdx)) }}
-                  </td>
-                }
-              </tr>
-            }
-          }
-        </tbody>
+    <div class="overflow-auto max-h-[60vh] border border-gray-300 dark:border-gray-700 rounded-lg">
+      <table mat-table [dataSource]="dataSource" matSort (matSortChange)="onSortChange($event)" class="min-w-full">
+
+        <!-- Note Row -->
+        <ng-container matColumnDef="note">
+          <td mat-cell *matCellDef="let entry" [attr.colspan]="displayedColumns().length" class="p-4 italic text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-600">
+            Anmerkung: {{ entry.note }} (Fundstelle: {{ entry.sourceReference || 'N/A' }})
+          </td>
+        </ng-container>
+
+        <!-- Standard Columns -->
+        @for (key of allColumns; track key) {
+          <ng-container [matColumnDef]="key">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header [style.min-width]="colMinWidth[key]" class="p-4 text-left font-medium whitespace-nowrap">
+              {{ headerMap[key] || key }}
+            </th>
+            <td mat-cell *matCellDef="let entry" class="p-4 align-top border-t border-gray-200 dark:border-gray-600" [class.font-medium]="key === 'id' || key === 'questioner' || key === 'witness' || key === 'Fraktion'">
+                {{ getCellValue(key, entry) }}
+            </td>
+          </ng-container>
+        }
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: isNote(row) ? ['note'] : displayedColumns()" (click)="rowClick.emit(row)" class="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"></tr>
       </table>
     </div>
   `,
-  styles: [`
-    .data-table-row:hover {
-      background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, var(--md-sys-color-surface)) !important;
-      cursor: pointer;
-    }
-  `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataTableComponent {
@@ -84,6 +46,11 @@ export class DataTableComponent {
   rowClick = output<ParsedEntry>();
   sort = output<SortableKey>();
 
+  // FIX: Use signal-based viewChild instead of the decorator syntax.
+  matSort = viewChild(MatSort);
+
+  dataSource = new MatTableDataSource<ParsedEntry>();
+
   headerMap: Record<string, string> = {
     id: '#', sourceReference: 'Fundstelle', questioner: 'Fragesteller', question: 'Frage', witness: 'Zeuge', answer: 'Antwort', kernaussage: 'Kernaussage', zugeordneteKategorien: 'Zugeordnete Kategorie(n)', begruendung: 'Begründung', note: 'Anmerkung', Fraktion: 'Fraktion', searchReason: 'Relevanzgrund'
   };
@@ -91,43 +58,57 @@ export class DataTableComponent {
     kernaussage: '300px', begruendung: '300px', zugeordneteKategorien: '250px', question: '450px', answer: '450px', searchReason: '300px'
   };
 
-  headers = computed((): SortableKey[] => {
+  allColumns: SortableKey[] = ['id', 'sourceReference', 'questioner', 'question', 'witness', 'answer', 'kernaussage', 'zugeordneteKategorien', 'begruendung', 'Fraktion', 'searchReason'];
+
+  private qaCounterCache = new Map<number, number>();
+
+  constructor() {
+    effect(() => {
+      const entries = this.data();
+      this.updateQaCounters(entries);
+      this.dataSource.data = entries;
+      // FIX: Access matSort as a signal and provide a null fallback for the dataSource.
+      this.dataSource.sort = this.matSort() ?? null;
+    });
+  }
+
+  displayedColumns = computed((): SortableKey[] => {
     const visible = this.visibleColumns();
-    if (visible && visible.length > 0) {
-      return visible.includes('id') ? ['id', ...visible.filter(k => k !== 'id')] : visible;
-    }
+    if (visible && visible.length > 0) return visible;
+
     if (this.data().length === 0) return [];
     
     const baseKeys: SortableKey[] = ['id', 'sourceReference', 'questioner', 'question', 'witness', 'answer'];
     const hasAnalysisData = this.data().some(d => d.kernaussage || d.zugeordneteKategorien || d.begruendung);
     if (hasAnalysisData) baseKeys.push('kernaussage', 'zugeordneteKategorien', 'begruendung');
     
-    const allKeys = Object.keys(this.data()[0]);
-    return baseKeys.filter(k => allKeys.includes(k)) as SortableKey[];
+    const hasSearchReason = this.data().some(d => d.searchReason);
+    if (hasSearchReason) baseKeys.push('searchReason');
+
+    const firstItemKeys = Object.keys(this.data()[0]);
+    return baseKeys.filter(k => firstItemKeys.includes(k)) as SortableKey[];
   });
 
-  private _qaCounterCache = new Map<number, number>();
-  qaPairCounter(index: number): number {
-      if (this._qaCounterCache.has(index)) {
-          return this._qaCounterCache.get(index)!;
+  private updateQaCounters(data: ParsedEntry[]) {
+    this.qaCounterCache.clear();
+    let counter = 0;
+    data.forEach(entry => {
+      if (!entry.note) {
+        counter++;
       }
-      let counter = 0;
-      for (let i = 0; i <= index; i++) {
-          if (!this.data()[i].note) {
-              counter++;
-          }
-      }
-      this._qaCounterCache.set(index, counter);
-      return counter;
+      this.qaCounterCache.set(entry.id, counter);
+    });
   }
 
-  noteStartIndex = computed(() => this.headers().findIndex(h => h === 'sourceReference' || h === 'questioner') || 1);
-  noteColSpan = computed(() => this.headers().length - this.noteStartIndex());
-
-  isSortable = (key: SortableKey) => key !== 'note';
-
-  getCellValue(key: SortableKey, entry: ParsedEntry, qaCounter: number): string | number {
-    if (key === 'id' && entry.question) return qaCounter;
+  getCellValue(key: SortableKey, entry: ParsedEntry): string | number {
+    if (key === 'id' && !entry.note) return this.qaCounterCache.get(entry.id) || entry.id;
+    if (key === 'id' && entry.note) return entry.id;
     return String(entry[key] ?? '');
+  }
+
+  isNote = (entry: ParsedEntry): boolean => !!entry.note;
+
+  onSortChange(sortState: any) {
+    this.sort.emit(sortState.active as SortableKey);
   }
 }

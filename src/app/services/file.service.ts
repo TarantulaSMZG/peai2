@@ -1,26 +1,13 @@
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
 import { ParsedEntry } from 'app/types';
-import { promisePool, loadScript } from 'app/utils/promise-pool';
+import { promisePool } from 'app/utils/promise-pool';
 import { WritableSignal } from '@angular/core';
-
-// Define interfaces for Tesseract to provide type safety for the dynamically loaded library.
-interface TesseractWorker {
-  recognize(image: any): Promise<{ data: { text: string } }>;
-  terminate(): Promise<void>;
-}
-interface TesseractScheduler {
-  addWorker(worker: TesseractWorker): Promise<string>;
-  addJob(action: 'recognize', image: any): Promise<{ data: { text: string; confidence: number; } }>;
-  terminate(): Promise<void>;
-}
+import * as pdfjsLib from 'pdfjs-dist';
+import Tesseract from 'tesseract.js';
 
 declare global {
   interface Window {
-    Tesseract: {
-      createWorker(lang: string): Promise<TesseractWorker>;
-      createScheduler(): TesseractScheduler;
-    }
     Papa: any;
   }
 }
@@ -58,24 +45,12 @@ export class FileService {
     setLoadingMessage: (msg: string) => void, 
     stopSignal: WritableSignal<boolean>
   ): Promise<{ text: string; confidence: number; }> {
-    let pdfjsLib: any;
-    try {
-        setLoadingMessage('Lade Bibliotheken...');
-        const [pdfjsModule] = await Promise.all([
-            import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs'),
-            loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js')
-        ]);
-        pdfjsLib = pdfjsModule;
-    } catch (error) {
-        console.error("Library load error:", error);
-        throw new Error('Konnte Bibliotheken nicht laden. Bitte Internetverbindung prüfen.');
-    }
-    
-    const { Tesseract } = window;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs`;
+    setLoadingMessage('Initialisiere Bibliotheken...');
+    // The workerSrc property needs to be set to the URL of the PDF.js worker script.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.4.168/build/pdf.worker.mjs`;
 
     const arrayBuffer = await file.arrayBuffer();
-    let scheduler: TesseractScheduler | null = null;
+    let scheduler: Tesseract.Scheduler | null = null;
 
     try {
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -107,7 +82,7 @@ export class FileService {
             canvas.height = viewport.height;
             canvas.width = viewport.width;
 
-            await page.render({ canvas, canvasContext: context, viewport }).promise;
+            await page.render({ canvasContext: context, viewport }).promise;
 
             this.applyGrayscale(context);
             this.applyThreshold(context, 170);

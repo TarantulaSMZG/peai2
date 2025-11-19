@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NotificationService } from 'app/services/notification.service';
 
 @Component({
   selector: 'app-floating-status',
   standalone: true,
-  imports: [NgClass, NgStyle],
+  imports: [NgClass, NgStyle, MatProgressSpinnerModule, MatProgressBarModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <style>
@@ -26,10 +28,10 @@ import { NotificationService } from 'app/services/notification.service';
     </style>
     @if (statusMessage(); as msg) {
       <div 
-        class="fixed top-6 left-1/2 flex items-center gap-4 px-6 py-3 rounded-full shadow-lg transition-transform duration-300 ease-in-out z-[1000] min-w-[320px] max-w-[90vw]"
+        class="fixed top-6 left-1/2 flex items-center gap-4 px-6 py-3 rounded-full shadow-lg transition-transform duration-300 ease-in-out z-[1000] min-w-[320px] max-w-[90vw] bg-white dark:bg-gray-800"
         [ngClass]="{
-          'bg-error-container text-on-error-container': msg.type === 'error',
-          'bg-surface-container text-on-surface': msg.type !== 'error',
+          'bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100': msg.type === 'error',
+          'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100': msg.type !== 'error',
           'translate-y-0 opacity-100': isVisible(),
           '-translate-y-[150%] opacity-0': !isVisible()
         }"
@@ -37,20 +39,20 @@ import { NotificationService } from 'app/services/notification.service';
         style="transform: translateX(-50%);"
       >
         @if (msg.type === 'error') {
-          <span class="material-symbols-outlined text-error">error</span>
+          <span class="material-symbols-outlined text-red-600 dark:text-red-400">error</span>
         } @else if (isLoading()) {
-          <md-circular-progress 
-            [indeterminate]="progress() === null" 
-            [value]="progress() ?? 0"
-            style="--md-circular-progress-size: 24px; --md-circular-progress-active-indicator-color: var(--md-sys-color-primary);">
-          </md-circular-progress>
+          <mat-progress-spinner 
+            [mode]="progress() === null ? 'indeterminate' : 'determinate'"
+            [value]="progress() ? progress()! * 100 : 0"
+            diameter="24">
+          </mat-progress-spinner>
         }
         <div class="flex flex-col flex-grow gap-1 min-w-0">
-          <span class="md-typescale-title-medium whitespace-nowrap overflow-hidden text-ellipsis">
+          <span class="font-medium whitespace-nowrap overflow-hidden text-ellipsis">
             {{ cleanMessage() }}
           </span>
           @if (isLoading() && progress() !== null) {
-            <md-linear-progress [value]="progress() ?? 0" class="w-full" style="--md-linear-progress-active-indicator-color: var(--md-sys-color-primary); --md-linear-progress-track-color: var(--md-sys-color-surface-variant);"></md-linear-progress>
+            <mat-progress-bar [value]="progress()! * 100" mode="determinate"></mat-progress-bar>
           }
         </div>
       </div>

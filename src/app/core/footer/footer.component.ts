@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { LogoIconComponent } from 'app/shared/logo-icon/logo-icon.component';
@@ -7,23 +7,22 @@ import { LogoIconComponent } from 'app/shared/logo-icon/logo-icon.component';
   selector: 'app-footer',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, NgClass, LogoIconComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   styleUrls: ['./footer.component.css'],
   template: `
-    <footer class="fixed bottom-0 left-0 right-0 bg-surface-container-low flex justify-around items-stretch border-t border-outline-variant z-[100]">
+    <footer class="fixed bottom-0 left-0 right-0 bg-gray-100 dark:bg-gray-800 flex justify-around items-stretch border-t border-gray-300 dark:border-gray-700 z-[100]">
       @for (tab of tabs; track tab.label) {
         @if (tab.isHome) {
           <a [routerLink]="['/']" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="footer-nav-button" [title]="tab.label">
              <div class="nav-content">
                 <app-logo-icon [simple]="true" style="width: 24px; height: 24px;"></app-logo-icon>
-                <span class="md-typescale-label-medium">{{ tab.label }}</span>
+                <span class="text-xs font-medium">{{ tab.label }}</span>
               </div>
           </a>
         } @else {
            <a [routerLink]="tab.route" routerLinkActive="active" class="footer-nav-button" [title]="tab.label">
              <div class="nav-content">
                 <span class="material-symbols-outlined">{{ tab.icon }}</span>
-                <span class="md-typescale-label-medium">{{ tab.label }}</span>
+                <span class="text-xs font-medium">{{ tab.label }}</span>
               </div>
           </a>
         }

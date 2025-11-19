@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
 import { ModuleWrapperComponent } from 'app/shared/module-wrapper/module-wrapper.component';
 import { IoFieldComponent } from 'app/shared/io-field/io-field.component';
 import { DataTableComponent } from 'app/shared/data-table/data-table.component';
@@ -15,8 +21,11 @@ import { ParsedEntry, SortableKey, SortDirection } from 'app/types';
 @Component({
   selector: 'app-parser',
   standalone: true,
-  imports: [ModuleWrapperComponent, IoFieldComponent, DataTableComponent, EditModalComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    ModuleWrapperComponent, IoFieldComponent, DataTableComponent,
+    MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
+    MatProgressSpinnerModule
+  ],
   template: `
   <app-module-wrapper
       title="Parser"
@@ -33,76 +42,81 @@ import { ParsedEntry, SortableKey, SortDirection } from 'app/types';
           (clear)="inputText.set('')"
       />
       
-      <md-outlined-text-field
-          label="Protokollnummer"
+      <mat-form-field appearance="outline" style="width: 200px">
+        <mat-label>Protokollnummer</mat-label>
+        <input
+          matInput
           [value]="protocolNumber()"
-          (input)="protocolNumber.set($event.target.value)"
-          style="width: 200px"
-          [disabled]="isLoading()"
-      ></md-outlined-text-field>
+          (input)="protocolNumber.set(($event.target as HTMLInputElement).value)"
+          [disabled]="isLoading()" />
+      </mat-form-field>
 
       <div class="action-buttons">
-          <md-filled-button (click)="parse()" [disabled]="isLoading() || !inputText().trim()">
-              <span class="material-symbols-outlined" slot="icon">mediation</span>
+          <button mat-flat-button color="primary" (click)="parse()" [disabled]="isLoading() || !inputText().trim()">
+              <mat-icon>mediation</mat-icon>
               Text parsen & speichern
-          </md-filled-button>
+          </button>
           @if (isParsing()) {
-              <md-outlined-button (click)="abort()">
-                  <span class="material-symbols-outlined" slot="icon">cancel</span>
+              <button mat-stroked-button (click)="abort()">
+                  <mat-icon>cancel</mat-icon>
                   Abbrechen
-              </md-outlined-button>
+              </button>
           }
-          <md-outlined-button (click)="dataService.clearDatabase()" [disabled]="isLoading() || parsedData().length === 0">
-              <span class="material-symbols-outlined" slot="icon">delete_forever</span>
+          <button mat-stroked-button (click)="dataService.clearDatabase()" [disabled]="isLoading() || parsedData().length === 0">
+              <mat-icon>delete_forever</mat-icon>
               Datenbank zurücksetzen
-          </md-outlined-button>
+          </button>
       </div>
 
-      @if (isLoading()) {
+      @if (dataService.isLoading()) {
           <div class="placeholder-card" style="min-height: 400px; justify-content: center">
-              <md-circular-progress indeterminate></md-circular-progress>
-              <h3 class="md-typescale-title-medium">{{ dataService.isLoading() ? 'Lade Daten...' : 'Parsing wird ausgeführt...' }}</h3>
+              <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+              <h3 class="mat-h3">Lade Daten...</h3>
           </div>
       } @else if (parsedData().length > 0) {
           <div class="mt-6 flex flex-col gap-6">
               <div class="flex justify-between items-center">
-                  <h2 class="md-typescale-title-large">Geparste Daten ({{ parsedData().length }} Einträge in DB)</h2>
+                  <h2 class="mat-h2">Geparste Daten ({{ parsedData().length }} Einträge in DB)</h2>
                   <div class="flex gap-2">
-                      <md-icon-button title="Export as CSV" (click)="fileService.exportToCsv(parsedData(), generateFilename(protocolNumber(), 'parsed') + '.csv')" [disabled]="isLoading()">
-                          <span class="material-symbols-outlined">csv</span>
-                      </md-icon-button>
-                      <md-icon-button title="Export as XLSX" (click)="fileService.exportToXlsx(parsedData(), generateFilename(protocolNumber(), 'parsed') + '.xlsx')" [disabled]="isLoading()">
-                          <span class="material-symbols-outlined">description</span>
-                      </md-icon-button>
+                      <button mat-icon-button title="Export as CSV" (click)="fileService.exportToCsv(parsedData(), generateFilename(protocolNumber(), 'parsed') + '.csv')" [disabled]="isLoading()">
+                          <mat-icon>csv</mat-icon>
+                      </button>
+                      <button mat-icon-button title="Export as XLSX" (click)="fileService.exportToXlsx(parsedData(), generateFilename(protocolNumber(), 'parsed') + '.xlsx')" [disabled]="isLoading()">
+                          <mat-icon>description</mat-icon>
+                      </button>
                   </div>
               </div>
-              <app-data-table [data]="sortedData()" (rowClick)="editingEntry.set($event)" (sort)="onSort($event)" [sortConfig]="sortConfig()" />
+              <app-data-table [data]="sortedData()" (rowClick)="openEditModal($event)" (sort)="onSort($event)" [sortConfig]="sortConfig()" />
           </div>
       } @else {
-           <div class="placeholder-card">
-            <span class="material-symbols-outlined">article</span>
-            <h3 class="md-typescale-title-medium">Keine Daten in der Datenbank</h3>
-            <p class="md-typescale-body-medium">Fügen Sie oben Text ein und klicken Sie auf "Text parsen & speichern", um zu beginnen.</p>
-          </div>
+          @if (isParsing()) {
+            <div class="placeholder-card" style="min-height: 400px; justify-content: center">
+                <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+                <h3 class="mat-h3">Parsing wird ausgeführt...</h3>
+            </div>
+          } @else {
+            <div class="placeholder-card">
+              <span class="material-symbols-outlined">article</span>
+              <h3 class="mat-h3">Keine Daten in der Datenbank</h3>
+              <p class="mat-body-1">Fügen Sie oben Text ein und klicken Sie auf "Text parsen & speichern", um zu beginnen.</p>
+            </div>
+          }
       }
-      
-      <app-edit-modal [entry]="editingEntry()" (close)="editingEntry.set(null)" (save)="onSaveChanges($event)" />
   </app-module-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParserComponent {
-  // FIX: Explicitly typed injected services to ensure correct type inference.
   dataService: DataService = inject(DataService);
   geminiService: GeminiService = inject(GeminiService);
   fileService: FileService = inject(FileService);
   notificationService: NotificationService = inject(NotificationService);
+  dialog: MatDialog = inject(MatDialog);
 
   inputText = signal('');
   protocolNumber = signal('20');
   isParsing = signal(false);
   
-  editingEntry = signal<ParsedEntry | null>(null);
   sortConfig = signal<{ key: SortableKey; direction: SortDirection } | null>({ key: 'id', direction: 'ascending' });
   
   parsedData = this.dataService.parsedData;
@@ -112,7 +126,6 @@ export class ParserComponent {
 
   constructor() {
     effect(() => {
-        // Simple session persistence
         sessionStorage.setItem('parser.inputText', this.inputText());
         sessionStorage.setItem('parser.protocolNumber', this.protocolNumber());
     }, { allowSignalWrites: true });
@@ -172,7 +185,12 @@ export class ParserComponent {
   }
 
   private async finalizeParsing(entries: TempEntry[]) {
-    if (entries.length === 0) return;
+    if (this.abortController?.signal.aborted) return;
+    if (entries.length === 0) {
+      this.notificationService.showError('Keine verwertbaren Einträge gefunden.');
+      return;
+    }
+
     this.notificationService.showLoading('Führe finale Zusammenstellung durch...');
         
     entries.sort((a, b) => {
@@ -196,9 +214,23 @@ export class ParserComponent {
     const direction: SortDirection = (current?.key === key && current.direction === 'ascending') ? 'descending' : 'ascending';
     this.sortConfig.set({ key, direction });
   }
+
+  openEditModal(entry: ParsedEntry) {
+    const dialogRef = this.dialog.open(EditModalComponent, {
+      width: '800px',
+      maxWidth: '90vw',
+      data: entry
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.onSaveChanges(result);
+      }
+    });
+  }
+
   async onSaveChanges(entry: ParsedEntry) {
     await this.dataService.updateEntry(entry);
-    this.editingEntry.set(null);
     this.notificationService.showStatus(`Eintrag #${entry.id} aktualisiert.`);
   }
 

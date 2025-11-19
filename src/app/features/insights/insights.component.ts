@@ -1,5 +1,9 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
 import { ModuleWrapperComponent } from 'app/shared/module-wrapper/module-wrapper.component';
 import { DataTableComponent } from 'app/shared/data-table/data-table.component';
 import { EditModalComponent } from 'app/shared/edit-modal/edit-modal.component';
@@ -14,8 +18,10 @@ import { KeyInsights, ParsedEntry, SortableKey, SortDirection } from 'app/types'
 @Component({
   selector: 'app-insights',
   standalone: true,
-  imports: [ModuleWrapperComponent, DataTableComponent, EditModalComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [
+    ModuleWrapperComponent, DataTableComponent, MatButtonModule,
+    MatIconModule, MatProgressSpinnerModule
+  ],
   template: `
     <app-module-wrapper
       title="Insights"
@@ -23,98 +29,96 @@ import { KeyInsights, ParsedEntry, SortableKey, SortDirection } from 'app/types'
       
       @if (dataService.isLoading()) {
         <div class="placeholder-card" style="min-height: 400px; justify-content: center;">
-          <md-circular-progress indeterminate></md-circular-progress>
-          <h3 class="md-typescale-title-medium">Lade Daten...</h3>
+          <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+          <h3 class="mat-h3">Lade Daten...</h3>
         </div>
       } @else if (data().length === 0) {
         <div class="placeholder-card">
           <span class="material-symbols-outlined">dataset_linked</span>
-          <h3 class="md-typescale-title-medium">Keine Daten gefunden</h3>
-          <p class="md-typescale-body-medium">Bitte laden Sie zuerst eine Datei im <strong>Parser</strong>-Modul hoch, um Einblicke zu generieren.</p>
+          <h3 class="mat-h3">Keine Daten gefunden</h3>
+          <p class="mat-body-1">Bitte laden Sie zuerst eine Datei im <strong>Parser</strong>-Modul hoch, um Einblicke zu generieren.</p>
         </div>
       } @else {
         <div class="action-buttons">
-          <md-filled-button (click)="findInsights()" [disabled]="isLoading()">
-              <span class="material-symbols-outlined" slot="icon">insights</span>
+          <button mat-flat-button color="primary" (click)="findInsights()" [disabled]="isLoading()">
+              <mat-icon>insights</mat-icon>
               Find Insights
-          </md-filled-button>
+          </button>
           @if (isGenerating()) {
-              <md-outlined-button (click)="abort()">
-                   <span class="material-symbols-outlined" slot="icon">cancel</span>
+              <button mat-stroked-button (click)="abort()">
+                   <mat-icon>cancel</mat-icon>
                   Abbrechen
-              </md-outlined-button>
+              </button>
           }
         </div>
         
         @if (insights(); as result) {
-          <div class="bg-surface-container-highest p-6 rounded-[28px] flex flex-col gap-6">
+          <div class="bg-gray-200 dark:bg-gray-800 p-6 rounded-3xl flex flex-col gap-6">
             <div class="flex justify-between items-center">
-              <h2 class="md-typescale-title-large">Generated Insights</h2>
+              <h2 class="mat-h2">Generated Insights</h2>
               <div class="flex gap-2">
-                  <md-icon-button (click)="copyInsights()" title="Copy as Markdown"><span class="material-symbols-outlined">{{ copyIcon() }}</span></md-icon-button>
-                  <md-icon-button (click)="exportInsights()" title="Export as Markdown"><span class="material-symbols-outlined">download</span></md-icon-button>
+                  <button mat-icon-button (click)="copyInsights()" title="Copy as Markdown"><mat-icon>{{ copyIcon() }}</mat-icon></button>
+                  <button mat-icon-button (click)="exportInsights()" title="Export as Markdown"><mat-icon>download</mat-icon></button>
               </div>
             </div>
             <div>
-              <h3 class="md-typescale-title-medium">Zusammenfassung</h3>
-              <p class="md-typescale-body-large mt-2 text-on-surface-variant" [innerHTML]="sanitize(renderMarkdown(result.summary))"></p>
+              <h3 class="mat-h3">Zusammenfassung</h3>
+              <p class="mat-body-1 mt-2" [innerHTML]="sanitize(renderMarkdown(result.summary))"></p>
             </div>
             <div class="flex flex-col gap-6">
-              <h3 class="md-typescale-title-medium">Kernaussagen</h3>
+              <h3 class="mat-h3">Kernaussagen</h3>
               @for (item of result.insights; track $index) {
-                <div class="p-4 rounded-lg shadow-[var(--md-sys-elevation-level1)] bg-surface-container-low">
-                  <h4 class="md-typescale-title-small m-0 mb-2">{{ item.title }}</h4>
-                  <p class="md-typescale-body-medium m-0 mb-3" [innerHTML]="sanitize(renderMarkdown(item.description))"></p>
-                  <p class="md-typescale-body-medium m-0 text-on-surface-variant" [innerHTML]="renderReferences(item.references)"></p>
+                <div class="p-4 rounded-lg shadow-md bg-white dark:bg-gray-700">
+                  <h4 class="mat-h4 m-0 mb-2">{{ item.title }}</h4>
+                  <p class="mat-body-1 m-0 mb-3" [innerHTML]="sanitize(renderMarkdown(item.description))"></p>
+                  <p class="mat-body-1 m-0" [innerHTML]="renderReferences(item.references)"></p>
                 </div>
               }
             </div>
           </div>
         } @else {
           @if (isGenerating()) {
-            <div class="placeholder-card"><md-circular-progress indeterminate></md-circular-progress><h3 class="md-typescale-title-medium">Generating Insights...</h3></div>
+            <div class="placeholder-card"><mat-progress-spinner mode="indeterminate"></mat-progress-spinner><h3 class="mat-h3">Generating Insights...</h3></div>
           } @else {
             <div class="placeholder-card">
               <span class="material-symbols-outlined">auto_awesome</span>
-              <h3 class="md-typescale-title-medium">Bereit, Einblicke zu generieren</h3>
-              <p class="md-typescale-body-medium">Klicken Sie auf "Find Insights", um die {{ data().length }} Einträge aus der Datenbank zu analysieren.</p>
+              <h3 class="mat-h3">Bereit, Einblicke zu generieren</h3>
+              <p class="mat-body-1">Klicken Sie auf "Find Insights", um die {{ data().length }} Einträge aus der Datenbank zu analysieren.</p>
             </div>
           }
         }
         
         <div class="mt-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="md-typescale-title-large">Quelldaten ({{ data().length }})</h2>
+            <h2 class="mat-h2">Quelldaten ({{ data().length }})</h2>
             <div class="flex gap-2">
-              <md-icon-button title="Export as CSV" (click)="fileService.exportToCsv(data(), generateFilename(protocolNumber(), 'analyzed') + '.csv')" [disabled]="isLoading()">
-                <span class="material-symbols-outlined">csv</span>
-              </md-icon-button>
-              <md-icon-button title="Export as XLSX" (click)="fileService.exportToXlsx(data(), generateFilename(protocolNumber(), 'analyzed') + '.xlsx')" [disabled]="isLoading()">
-                <span class="material-symbols-outlined">description</span>
-              </md-icon-button>
+              <button mat-icon-button title="Export as CSV" (click)="fileService.exportToCsv(data(), generateFilename(protocolNumber(), 'analyzed') + '.csv')" [disabled]="isLoading()">
+                <mat-icon>csv</mat-icon>
+              </button>
+              <button mat-icon-button title="Export as XLSX" (click)="fileService.exportToXlsx(data(), generateFilename(protocolNumber(), 'analyzed') + '.xlsx')" [disabled]="isLoading()">
+                <mat-icon>description</mat-icon>
+              </button>
             </div>
           </div>
-          <app-data-table [data]="sortedData()" (rowClick)="editingEntry.set($event)" (sort)="onSort($event)" [sortConfig]="sortConfig()" />
+          <app-data-table [data]="sortedData()" (rowClick)="openEditModal($event)" (sort)="onSort($event)" [sortConfig]="sortConfig()" />
         </div>
       }
-      <app-edit-modal [entry]="editingEntry()" (close)="editingEntry.set(null)" (save)="onSaveChanges($event)" />
     </app-module-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InsightsComponent {
-  // FIX: Explicitly typed injected services to ensure correct type inference.
   dataService: DataService = inject(DataService);
   geminiService: GeminiService = inject(GeminiService);
   fileService: FileService = inject(FileService);
   notificationService: NotificationService = inject(NotificationService);
   sanitizer: DomSanitizer = inject(DomSanitizer);
+  dialog: MatDialog = inject(MatDialog);
 
   insights = signal<KeyInsights | null>(null);
   isGenerating = signal(false);
   copyIcon = signal('content_copy');
 
-  editingEntry = signal<ParsedEntry | null>(null);
   sortConfig = signal<{ key: SortableKey; direction: SortDirection } | null>({ key: 'id', direction: 'ascending' });
   
   abortController: AbortController | null = null;
@@ -195,10 +199,23 @@ export class InsightsComponent {
     });
     return config.direction === 'ascending' ? sorted : sorted.reverse();
   });
+  
+  openEditModal(entry: ParsedEntry) {
+    const dialogRef = this.dialog.open(EditModalComponent, {
+      width: '800px',
+      maxWidth: '90vw',
+      data: entry
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.onSaveChanges(result);
+      }
+    });
+  }
 
   async onSaveChanges(updatedEntry: ParsedEntry) {
     await this.dataService.updateEntry(updatedEntry);
-    this.editingEntry.set(null);
     this.notificationService.showStatus(`Eintrag #${updatedEntry.id} aktualisiert.`);
   }
 
@@ -206,7 +223,8 @@ export class InsightsComponent {
     if (!references) return 'Belege: N/A';
     const refs = references.split(',').map(r => r.trim()).filter(Boolean);
     if (refs.length === 0) return 'Belege: N/A';
-    return 'Belege: ' + refs.map(ref => `<strong style="color: var(--md-sys-color-primary); font-weight: 500;">${ref}</strong>`).join(', ');
+    // Using a placeholder for color, will be handled by theme
+    return 'Belege: ' + refs.map(ref => `<strong class="text-primary-600 dark:text-primary-400 font-medium">${ref}</strong>`).join(', ');
   }
 
   sanitize(html: string): SafeHtml {

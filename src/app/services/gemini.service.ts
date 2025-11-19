@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
+import { environment } from '../environment';
+import { NotificationService } from './notification.service';
 import { CorpusItem, KeyInsights, ParsedEntry } from 'app/types';
 
 // Interfaces from original parsingService
@@ -16,12 +18,19 @@ const MIN_REQUEST_DELAY = 1500; // Adjusted for better performance with promise 
 @Injectable({ providedIn: 'root' })
 export class GeminiService {
   private ai: GoogleGenAI;
+  private notificationService = inject(NotificationService);
+  private isConfigured: boolean;
 
   constructor() {
-    if (!process.env.API_KEY) {
-      throw new Error("API_KEY environment variable not set.");
+    const apiKey = environment.apiKey;
+    if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+      this.notificationService.showError('Gemini API Key ist nicht konfiguriert.');
+      this.ai = new GoogleGenAI({ apiKey: 'INVALID_KEY' });
+      this.isConfigured = false;
+    } else {
+      this.ai = new GoogleGenAI({ apiKey });
+      this.isConfigured = true;
     }
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
   private async callGenerativeAI(
@@ -31,6 +40,10 @@ export class GeminiService {
     signal: AbortSignal,
     retries = 3
   ): Promise<any> {
+    if (!this.isConfigured) {
+      throw new Error('Aktion abgebrochen: Gemini API Key ist nicht konfiguriert.');
+    }
+    
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTimestamp;
     if (timeSinceLastRequest < MIN_REQUEST_DELAY) {

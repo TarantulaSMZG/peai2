@@ -1,81 +1,67 @@
-import { Component, ChangeDetectionStrategy, CUSTOM_ELEMENTS_SCHEMA, input, output, viewChild, ElementRef, signal, effect, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 import { ParsedEntry } from 'app/types';
-
-type DialogElement = HTMLElement & { show: () => void; close: (returnValue?: string) => void; returnValue: string };
 
 @Component({
   selector: 'app-edit-modal',
   standalone: true,
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule],
   template: `
-    <md-dialog #dialog (close)="onDialogClose()">
-      @if (editedEntry(); as entry) {
-        <div slot="headline">
-            Eintrag #{{ entry.id }} bearbeiten
-            <span class="text-on-surface-variant ml-4">
-                ({{ entry.sourceReference }})
-            </span>
-        </div>
-        <div slot="content" class="dialog-content-grid">
-            @if (entry.note) {
-              <md-outlined-text-field
-                  label="Anmerkung" type="textarea" rows="5"
-                  class="w-full"
-                  [value]="entry.note || ''"
-                  (input)="handleChange('note', $event.target.value)">
-              </md-outlined-text-field>
-            } @else {
-              <md-outlined-text-field label="Fragesteller" type="textarea" rows="1" class="w-full" [value]="entry.questioner || ''" (input)="handleChange('questioner', $event.target.value)"></md-outlined-text-field>
-              <md-outlined-text-field label="Frage" type="textarea" rows="5" class="w-full" [value]="entry.question || ''" (input)="handleChange('question', $event.target.value)"></md-outlined-text-field>
-              <md-outlined-text-field label="Zeuge" type="textarea" rows="1" class="w-full" [value]="entry.witness || ''" (input)="handleChange('witness', $event.target.value)"></md-outlined-text-field>
-              <md-outlined-text-field label="Antwort" type="textarea" rows="8" class="w-full" [value]="entry.answer || ''" (input)="handleChange('answer', $event.target.value)"></md-outlined-text-field>
-            }
-        </div>
-        <div slot="actions">
-            <md-outlined-button (click)="dialogRef()?.close('cancel')">Abbrechen</md-outlined-button>
-            <md-filled-button (click)="onSave()" value="save">Speichern</md-filled-button>
-        </div>
+    <h2 mat-dialog-title>
+      Eintrag #{{ editedEntry().id }} bearbeiten
+      <span class="text-gray-500 ml-4 font-normal">
+          ({{ editedEntry().sourceReference }})
+      </span>
+    </h2>
+    <mat-dialog-content class="dialog-content-grid">
+      @if (editedEntry().note) {
+        <mat-form-field appearance="outline">
+          <mat-label>Anmerkung</mat-label>
+          <textarea matInput rows="5"
+            [value]="editedEntry().note || ''"
+            (input)="handleChange('note', ($event.target as HTMLInputElement).value)">
+          </textarea>
+        </mat-form-field>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>Fragesteller</mat-label>
+          <textarea matInput cdkTextareaAutosize [cdkAutosizeMinRows]="1"
+            [value]="editedEntry().questioner || ''" (input)="handleChange('questioner', ($event.target as HTMLInputElement).value)"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Frage</mat-label>
+          <textarea matInput cdkTextareaAutosize [cdkAutosizeMinRows]="3"
+            [value]="editedEntry().question || ''" (input)="handleChange('question', ($event.target as HTMLInputElement).value)"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Zeuge</mat-label>
+          <textarea matInput cdkTextareaAutosize [cdkAutosizeMinRows]="1"
+            [value]="editedEntry().witness || ''" (input)="handleChange('witness', ($event.target as HTMLInputElement).value)"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Antwort</mat-label>
+          <textarea matInput cdkTextareaAutosize [cdkAutosizeMinRows]="5"
+            [value]="editedEntry().answer || ''" (input)="handleChange('answer', ($event.target as HTMLInputElement).value)"></textarea>
+        </mat-form-field>
       }
-    </md-dialog>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button (click)="dialogRef.close()">Abbrechen</button>
+        <button mat-flat-button color="primary" [mat-dialog-close]="editedEntry()">Speichern</button>
+    </mat-dialog-actions>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditModalComponent {
-  entry = input<ParsedEntry | null>();
-  close = output<void>();
-  save = output<ParsedEntry>();
+  public dialogRef = inject(MatDialogRef<EditModalComponent>);
+  private data: ParsedEntry = inject(MAT_DIALOG_DATA);
 
-  dialog = viewChild<ElementRef<DialogElement>>('dialog');
-  dialogRef = computed(() => this.dialog()?.nativeElement);
-
-  editedEntry = signal<ParsedEntry | null>(null);
-
-  constructor() {
-    effect(() => {
-      const currentEntry = this.entry();
-      if (currentEntry) {
-        this.editedEntry.set({ ...currentEntry });
-        this.dialogRef()?.show();
-      } else {
-        this.dialogRef()?.close();
-      }
-    });
-  }
+  editedEntry = signal<ParsedEntry>({ ...this.data });
 
   handleChange(field: keyof ParsedEntry, value: string) {
-    this.editedEntry.update(entry => entry ? { ...entry, [field]: value || null } : null);
-  }
-
-  onSave() {
-    if (this.editedEntry()) {
-      this.save.emit(this.editedEntry()!);
-      this.dialogRef()?.close('save');
-    }
-  }
-
-  onDialogClose() {
-    if (this.dialogRef()?.returnValue !== 'save') {
-      this.close.emit();
-    }
+    this.editedEntry.update(entry => ({ ...entry, [field]: value || null }));
   }
 }
